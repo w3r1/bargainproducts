@@ -1,0 +1,9 @@
+Please build the software with
+mvn clean install
+
+Only requirements are mvn 3.3.9 and JDK8
+
+Please start the SpringBoot application as usual
+Endpoint:
+GET localhost:8080/bargainproducts/womensdresses?labelType=ShowPercDscount
+while labelType is optional
