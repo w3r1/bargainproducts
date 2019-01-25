@@ -2,6 +2,7 @@ package com.johnlewis.api.bargainproducts.service;
 
 import com.johnlewis.api.bargainproducts.client.RawProductsConsumerClient;
 import com.johnlewis.api.bargainproducts.client.domain.RawProduct;
+import com.johnlewis.api.bargainproducts.domain.ColorSwatch;
 import com.johnlewis.api.bargainproducts.domain.LabelType;
 import com.johnlewis.api.bargainproducts.domain.Product;
 import io.vavr.control.Try;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 
 import static com.johnlewis.api.bargainproducts.domain.LabelType.ShowPercDscount;
 import static com.johnlewis.api.bargainproducts.domain.LabelType.ShowWasThenNow;
+import static com.johnlewis.api.bargainproducts.domain.RGBColorMap.COLOR_NAME_TO_RGB;
 import static java.util.logging.Level.WARNING;
 import static org.apache.commons.lang3.StringUtils.*;
 
@@ -48,8 +50,27 @@ public class ProductServiceImpl implements ProductService {
 
         setPrices(product, rawProduct);
         setPriceLabel(product, labelType);
+        setVariants(product, rawProduct);
 
         return product;
+    }
+
+    private void setVariants(Product product, RawProduct rawProduct) {
+
+        List<ColorSwatch> colorList = rawProduct.getColorSwatches()
+                .stream()
+                .map(c -> {
+                    String rgbColor = COLOR_NAME_TO_RGB.get(c.getBasicColor().trim().toLowerCase());
+
+                    return ColorSwatch.builder()
+                            .color(c.getColor())
+                            .skuid(c.getSkuId())
+                            .rgbColor(rgbColor != null ? rgbColor : c.getBasicColor())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        product.setColorSwatches(colorList);
     }
 
     private void setPriceLabel(final Product product,
