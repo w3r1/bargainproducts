@@ -3,6 +3,7 @@ package com.johnlewis.api.bargainproducts.client;
 import com.johnlewis.api.bargainproducts.client.domain.RawCategory;
 import com.johnlewis.api.bargainproducts.client.domain.RawProduct;
 import com.johnlewis.api.bargainproducts.exception.ConsumerClientException;
+import com.johnlewis.api.bargainproducts.exception.ConsumerClientResponseEmptyException;
 import io.vavr.control.Try;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,13 +17,18 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
+import static java.util.logging.Level.SEVERE;
+import static java.util.logging.Level.WARNING;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 @Component
 public class RawProductsConsumerClient {
+
+    private static final Logger LOGGER = Logger.getLogger(RawProductsConsumerClient.class.getName());
 
     private static final String HTTPS = "https://";
     private static final String PORT_DELIMITER = ":";
@@ -56,12 +62,16 @@ public class RawProductsConsumerClient {
                 new HttpEntity<>(headers),
                 RawCategory.class
         )).onFailure((e) -> {
+            LOGGER.log(SEVERE, "Server not reachable: ", e);
             throw new ConsumerClientException("Product server not reachable, please try again later.");
         }).toJavaOptional();
 
         return responseEntityOptional
                 .map(HttpEntity::getBody)
                 .map(RawCategory::getProducts)
-                .orElseThrow(() -> new ConsumerClientException("Product server error."));
+                .orElseThrow(() -> {
+                    LOGGER.log(WARNING, "Server response is empty: ", responseEntityOptional);
+                    return new ConsumerClientResponseEmptyException();
+                });
     }
 }
